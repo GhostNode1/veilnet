@@ -1,25 +1,24 @@
+use tokio::net::TcpListener;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use oqs::kem;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     println!("VEILNET — Quantum Safe Network");
     println!("GhostNode1 online.");
-    println!("");
-    
-    // Schlüssel generieren
+    println!("Starting node on port 8888...");
+
+    let listener = TcpListener::bind("0.0.0.0:8888").await.unwrap();
+    println!("Listening for connections...");
+
     let kem = kem::Kem::new(kem::Algorithm::Kyber1024).unwrap();
-    let (public_key, secret_key) = kem.keypair().unwrap();
-    println!("Quantum-safe keys generated!");
-    
-    // Nachricht verschlüsseln
-    let (ciphertext, shared_secret_sender) = kem.encapsulate(&public_key).unwrap();
-    println!("Message encrypted!");
-    
-    // Nachricht entschlüsseln
-    let shared_secret_receiver = kem.decapsulate(&secret_key, &ciphertext).unwrap();
-    println!("Message decrypted!");
-    
-    // Prüfen ob gleich
-    if shared_secret_sender == shared_secret_receiver {
-        println!("SUCCESS: Quantum-safe encryption works!");
+    let (public_key, _secret_key) = kem.keypair().unwrap();
+    println!("Quantum-safe keys ready!");
+    println!("Waiting for peer...");
+
+    loop {
+        let (mut socket, addr) = listener.accept().await.unwrap();
+        println!("Peer connected: {}", addr);
+        socket.write_all(b"VEILNET_HELLO").await.unwrap();
     }
 }
